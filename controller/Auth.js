@@ -24,7 +24,7 @@ exports.loginUser = async (req,res) => {
         }
         else if(user.password === req.body.password)
         {
-            res.status(201).json({id: user.id, email: user.email, addresses: user.addresses});
+            res.status(201).json({id: user.id, email: user.email, addresses: user.addresses, role: user.role });
         }
         else{
             res.status(401).json({message: "Invalid Credentials"});
