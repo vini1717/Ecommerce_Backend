@@ -1,11 +1,24 @@
+const { sanitizeUser } = require("../Services/Common");
 const { User } = require("../model/User");
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
+const secret = 'SECRET_KEY';
 exports.createUser = async (req,res) => {
-    const user = new User(req.body);
-
     try{
-        const doc = await user.save();
-        res.status(201).json(doc);
+        const salt = crypto.randomBytes(16);
+        crypto.pbkdf2(req.body.password, salt, 31000,32,'sha256', async function(err,hashedPassword){
+            const user = new User({...req.body,password: hashedPassword, salt});
+
+            const doc = await user.save();
+            req.login(doc,function(err){
+                if(err)
+                    res.status(400).json(err);
+                const token = jwt.sign(sanitizeUser(doc),secret)
+                res.status(201).json(token);
+            })
+            
+        })
     }
     catch(err)
     {
@@ -15,23 +28,13 @@ exports.createUser = async (req,res) => {
 
 exports.loginUser = async (req,res) => {
 
-    try{
-        const user = await User.findOne({email: req.body.email}).exec();
-        console.log(user);
-        if(!user)
-        {
-            res.status(401).json({message: "No such user email exists"})
-        }
-        else if(user.password === req.body.password)
-        {
-            res.status(201).json({id: user.id, email: user.email, addresses: user.addresses, role: user.role });
-        }
-        else{
-            res.status(401).json({message: "Invalid Credentials"});
-        }
-    }
-    catch(err)
-    {
-        res.status(400).json(err);
-    }
+    // console.log(req.user)
+    res.json(req.user);
+
+}
+exports.checkUser = async (req,res) => {
+
+    // console.log(req.user)
+    res.json(req.user);
+
 }
