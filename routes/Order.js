@@ -3,7 +3,7 @@ const { fetchOrderByUser, createOrder, deleteOrder, updateOrder, fetchAllOrders 
 
 const router = express.Router();
 
-router.get("/user/:userId", fetchOrderByUser).post("/", createOrder).delete("/:id", deleteOrder).patch("/:id", updateOrder)
+router.get("/user", fetchOrderByUser).post("/", createOrder).delete("/:id", deleteOrder).patch("/:id", updateOrder)
 .get("/", fetchAllOrders);
 
 exports.router = router;

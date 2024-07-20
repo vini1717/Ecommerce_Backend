@@ -14,7 +14,8 @@ exports.createUser = async (req,res) => {
             req.login(doc,function(err){
                 if(err)
                     res.status(400).json(err);
-                const token = jwt.sign(sanitizeUser(doc),secret)
+                const token = jwt.sign(sanitizeUser(doc),secret);
+                res.cookie('jwt',token,{expires: new Date(Date.now() + 3600000), httpOnly: true});
                 res.status(201).json(token);
             })
             
@@ -29,7 +30,8 @@ exports.createUser = async (req,res) => {
 exports.loginUser = async (req,res) => {
 
     // console.log(req.user)
-    res.json(req.user);
+    res.cookie('jwt',req.user.token,{expires: new Date(Date.now() + 3600000), httpOnly: true});
+    res.json(req.user.token);
 
 }
 exports.checkUser = async (req,res) => {

@@ -5,6 +5,7 @@ const { createProduct } = require("./controller/Product");
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 
 const productsRouter = require("./routes/Products");
 const brandRouter = require("./routes/Brands");
@@ -16,18 +17,20 @@ const orderRouter = require("./routes/Order")
 const session = require('express-session')
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy;
-const server = express();
-const { isAuth, sanitizeUser } = require("./Services/Common");
+
+const { isAuth, sanitizeUser, cookieExtractor } = require("./Services/Common");
 const crypto = require('crypto');
 
+const server = express();
 const secret = 'SECRET_KEY';
 
 const opts = {};
-opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.jwtFromRequest = cookieExtractor
 opts.secretOrKey = secret ;
 
 
-
+server.use(cookieParser());
+server.use(express.static('build'))
 server.use(session({
     secret: 'keyboard cat',
     resave: false,
@@ -36,9 +39,14 @@ server.use(session({
 
 server.use(passport.authenticate('session'))
 
+const corsOption = {
+    origin: "http://localhost:3000",
+    credentials: true
+}
 const cors = require('cors');
+const { execArgv } = require("process");
 
-server.use(cors())
+server.use(cors(corsOption))
 server.use(express.json());
 server.use("/products", isAuth(), productsRouter.router);
 server.use("/brands", isAuth(), brandRouter.router);
@@ -62,8 +70,8 @@ passport.use('local', new LocalStrategy(
             {
                 if(crypto.timingSafeEqual(user.password, hashedPassword))
                 {
-                    const token = jwt.sign(sanitizeUser(user), secret)
-                    return done(null, token)
+                    const token = jwt.sign(sanitizeUser(user), secret);
+                    return done(null, {token})
                     // res.status(201).json({id: user.id, email: user.email, addresses: user.addresses, role: user.role });
                 }
                 else{
@@ -83,6 +91,8 @@ passport.use('local', new LocalStrategy(
 
 passport.use('jwt', new JwtStrategy(opts, async function(jwt_payload,done){
     try{
+        console.log("Opts: ", opts);
+        // console.log(jwt_payload)
         console.log("JWT TOKEN : ", {jwt_payload});
         const user = await User.findOne({_id:jwt_payload.id});
         console.log(user);
